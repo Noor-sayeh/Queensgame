@@ -1,0 +1,378 @@
+import javax.swing.*;
+import java.util.Random;
+import java.awt.*;
+import java.awt.Taskbar.State;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public class ProjectAi extends JFrame {
+    private JComboBox<Integer> boardSizeComboBox;
+    private JPanel chessBoardPanel;
+    private int boardSize;
+    private int[] queens;
+
+    public ProjectAi() {
+        setTitle("N-Queens");
+        setSize(700, 500);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout(10, 10));
+
+        JPanel settingsPanel = createSettingsPanel();
+        add(settingsPanel, BorderLayout.NORTH);
+
+        chessBoardPanel = new JPanel();
+        add(chessBoardPanel, BorderLayout.CENTER);
+    }
+
+    private JPanel createSettingsPanel() {
+       
+        JPanel settingsPanel = new JPanel(new GridLayout(2, 1));
+        
+        JLabel boardSizeLabel = new JLabel("Board Size:");
+        Integer[] integer = {4, 5, 6, 7, 8};
+        boardSizeComboBox = new JComboBox<>(integer); // adding the array of integer to the combo
+        JButton createBoardButton = new JButton("Create Board"); // creating board
+        
+       /////
+        queens=init(queens);
+        
+        JButton Hill_climbing= new JButton("Hill climbing"); 
+        JButton Simulated_annealing = new JButton("Simulated annealing"); 
+         
+        boardSizeComboBox.setPreferredSize(new Dimension(80, boardSizeComboBox.getPreferredSize().height));
+        
+        settingsPanel.add(boardSizeLabel);
+        settingsPanel.add(boardSizeComboBox);
+        settingsPanel.add(createBoardButton);
+
+        settingsPanel.add(Hill_climbing);
+        settingsPanel.add(Simulated_annealing);
+       
+        settingsPanel.add(Simulated_annealing);
+        
+        createBoardButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                boardSize = (int) boardSizeComboBox.getSelectedItem(); //taking selected item from combo
+                queens = new int[boardSize];  //put queens array size equal to the selected item in combo which is the boarder size
+                // calling functions to create board and to put Qs in the same row
+                
+               
+                
+                createChessBoard();
+                         
+                updateChessBoard();
+            }
+        });   
+        
+     
+        
+        
+        
+        
+        
+        
+        
+        
+        Simulated_annealing.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(queens !=null) {
+                	
+                	queens= sim_ann(queens);
+                	updateChessBoard();
+                }
+                else {
+                	JOptionPane.showMessageDialog(ProjectAi.this, "there is a problem");
+                }  
+                
+            }
+
+			
+        });
+        
+        
+        Hill_climbing.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	// we should check if the queen full 
+                if (queens != null) {
+                	// call the function hillClimbing to do algorithms
+                    queens = hillClimbing(queens);
+                    updateChessBoard();
+                } else {
+                    JOptionPane.showMessageDialog(ProjectAi.this, "Please create a board first.");
+                }
+            }
+        });
+     
+        
+        
+    
+        return settingsPanel;  //returning jpanel
+    }
+    
+    
+  
+
+
+  
+    
+    private int[] init(int[] queens2) {
+		
+    	for(int i=0;i<(boardSize*boardSize);i++)
+    	{
+    		
+    		queens[i]=i;
+    		
+    	}
+    	
+    	
+    	
+		return queens2;
+	}
+
+	private int[] sim_ann(int[] queens) {
+
+    
+    
+  int tem=2000;  	
+ double delta; /// delta e =h(next)-h(current)
+ int  y=0;
+ int t=0;
+ double prob;
+ int [] nextstate=new int[boardSize];
+ int [] beststate=new int[boardSize];
+beststate=queens;
+ 
+ 
+ for(int i =0;(i<3000)&&(calHeuristic(queens)>0);i++) {
+	 
+	 nextstate=nxtstat(queens);
+	 int rand=(int)Math.random();
+	 int tc=Temprature(i,tem);
+	 
+	 delta=calHeuristic(nextstate)-calHeuristic(queens);
+	 prob=Math.exp((-delta)/tc);
+	 
+	 if(delta>0) {
+		 queens=nextstate;
+		if( calHeuristic(beststate)<calHeuristic(queens)) { beststate=queens;}
+		
+	 }
+	 else if(tc==2) {break;}
+	 else if(rand<=prob) {
+		 queens=nextstate;
+	 }
+	 
+	 tem--;
+	 y=i;
+	 t=tc;
+	 
+ }
+
+ 
+ System.out.println("Iteration:" +y+" Temperature:"+ t);
+ 
+    	return queens;
+	}
+    
+    
+    private int[] nxtstat(int[] queens) {
+    	
+    	
+    	 int[] nextstate = queens.clone(); // Clone the current state to get a new state
+
+    	    Random r = new Random();
+    	    int row = r.nextInt(boardSize); // Randomly choose a row to modify
+    	    int col = r.nextInt(boardSize); // Randomly choose a new column for the queen in the selected row
+
+    	    // Move the queen to the new position (row, col)
+if (nextstate[row] != col) {     ///to make random next state
+    nextstate[row] = col;
+}
+
+    	    return nextstate;
+  
+    }
+    
+  private int  Temprature(int x, int y) {
+	  y=(int) ((int)y/(Math.log(x)));
+	  
+	  
+	  return y;
+	  
+  }
+    
+    private int calHeuristic(int[] queens) {
+        int heuristic = 0;
+
+        for (int i = 0; i < boardSize; i++) {
+            for (int j = i + 1; j < boardSize; j++) {
+                if (queens[i] == queens[j] || Math.abs(queens[i] - queens[j]) == Math.abs(i - j)) {
+                    heuristic++;
+                }}
+            }//first condition to see if queens are in the same row //second to see if they are diagonal
+    return heuristic;
+    }
+        
+    
+    ///hill climbing 
+    private int[] hillClimbing(int[] quen) {
+        int[] quueninitail = quen.clone();
+        
+        // quen = {0,0,0,0}===>>>> {Q---, Q---,Q---,Q---}
+        
+        System.out.print("quen: ");
+        for (int i = 0; i < quueninitail.length; i++) {
+            System.out.print(quueninitail[i] + " ");
+        }
+        System.out.println();
+        //
+        
+        int currentHeuristic = calHeuristic(quueninitail);
+        System.out.println("the heuristic number of the queen: "+currentHeuristic);//6
+        
+        while (true) {
+            int bestHeuristic = currentHeuristic;
+            System.out.println("The best number find after calculate heuristic: "+bestHeuristic);//6
+            
+            
+            int[] bestQueens = quueninitail.clone();
+            //*****************
+            System.out.print("quenbest: ");
+            for (int i = 0; i < bestQueens.length; i++) {
+                System.out.print(bestQueens[i] + " ");
+            }
+            System.out.println();
+            ///*****************
+            
+            
+            boolean flag = false;
+            for (int row = 0; row < boardSize; row++) {
+                int originalRow = quueninitail[row];
+             //   System.out.println("before   for col "+ originalRow);
+                for (int col = 0; col < boardSize; col++) {
+                    if (col == originalRow) {
+                        continue;/// loop for return to for loop ..
+                    }
+
+                    quueninitail[row] = col;
+                    System.out.println("qinitail[row]="+quueninitail[row] + " ");
+                    //
+                
+                    int newHeuristic = calHeuristic(quueninitail);
+                    System.out.println("new calculate of heuristic: "+newHeuristic + " ");
+
+                    if (newHeuristic < bestHeuristic) {
+                    	flag = false;
+                        bestHeuristic = newHeuristic;//4
+                        bestQueens = quueninitail.clone();
+                       //best after update cal hurastic 
+                        System.out.print("quenbest: ");
+                        for (int i = 0; i < bestQueens.length; i++) {
+                            System.out.print(bestQueens[i] + " ");
+                        }
+                        System.out.println();
+                    }
+                }//end of for loop col
+////////////
+                quueninitail[row] = originalRow;
+             //   System.out.println("after for col "+ originalRow);
+            }//
+            if (bestHeuristic >= currentHeuristic) {
+                // Perform random restart if stuck in local maxima
+            	
+            	quueninitail = generateRandomQueens();
+                currentHeuristic = calHeuristic(quueninitail);
+            } else {
+            	quueninitail = bestQueens;
+                currentHeuristic = bestHeuristic;
+            }
+
+            if (currentHeuristic == 0) {
+                break; // Solution found, exit the loop
+            }
+
+//
+     //      if (bestHeuristic >= currentHeuristic) {
+      //          break;  // Local optima reached, exit the loop
+      //     }
+           
+            currentHeuristic = bestHeuristic;
+            quueninitail = bestQueens;
+        }
+
+        return quueninitail;
+    }
+    
+    // explain :::  **************
+    // this function hill climbing using when the algorithem is stuck in a local maximum (local optimal)
+    // what the local maximum?
+    //a local maximum is a state where no more improving moves can be made....
+    //******************************************************8
+    // global optimal -->>>> state with Heuristic value is:0 (where no queens attack each other)
+    private int[] generateRandomQueens() {
+        int[] randomQueens = new int[boardSize];
+        Random random = new Random();
+
+        for (int col = 0; col < boardSize; col++) {
+            randomQueens[col] = random.nextInt(boardSize); // Randomly set a row for each column
+        }
+
+        return randomQueens;
+    }
+    
+    
+    private void createChessBoard() { // creating chess according to the number of q in combo box
+        chessBoardPanel.removeAll();
+        chessBoardPanel.setLayout(new GridLayout(boardSize, boardSize));
+
+        for (int row = 0; row < boardSize; row++) {
+            for (int col = 0; col < boardSize; col++) {
+                JPanel squarePanel = new JPanel();
+                squarePanel.setBackground((row + col) % 2 == 0 ? Color.WHITE : Color.GRAY);
+                chessBoardPanel.add(squarePanel);
+            }
+        }
+
+        chessBoardPanel.revalidate();
+        chessBoardPanel.repaint();
+    }
+
+   
+
+    private void updateChessBoard() {
+   
+      Component[] components = chessBoardPanel.getComponents();
+
+        for (Component component : components) {
+            JPanel squarePanel = (JPanel) component;
+            squarePanel.removeAll();
+        }
+
+        for (int row = 0; row < boardSize; row++) {
+            int col = queens[row];
+            JPanel squarePanel = (JPanel) components[row * boardSize + col];
+            JLabel queenLabel = new JLabel("Q");
+            queenLabel.setFont(new Font("Arial", Font.BOLD, 20));
+            queenLabel.setForeground(Color.GREEN);
+            squarePanel.add(queenLabel);
+        }
+        
+        chessBoardPanel.revalidate();
+        chessBoardPanel.repaint();
+    }
+   
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                ProjectAi nQueensGUI = new ProjectAi();
+                nQueensGUI.setVisible(true);
+            }
+        });
+    }
+}
